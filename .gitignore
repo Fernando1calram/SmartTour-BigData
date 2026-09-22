@@ -1,0 +1,26 @@
+# Archivos Python temporales
+
+__pycache__/
+*.pyc
+
+
+# Notebooks temporales
+
+.ipynb_checkpoints/
+
+
+# Entornos virtuales Python
+
+venv/
+env/
+
+
+# Variables privadas
+
+.env
+
+
+# Archivos de sistema
+
+.DS_Store
+Thumbs.db
