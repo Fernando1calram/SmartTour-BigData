@@ -24,8 +24,8 @@ def cargar_jugadores(ruta_carpeta):
 # -----------------------------
 # 2. CARGA DE DATOS
 # -----------------------------
-club_a = cargar_jugadores("./atletico")
-club_b = cargar_jugadores("./barcelona")
+club_a = cargar_jugadores("../../datasets/atletico")
+club_b = cargar_jugadores("../../datasets/barcelona")
 
 
 # -----------------------------
