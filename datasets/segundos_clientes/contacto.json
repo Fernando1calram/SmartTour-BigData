@@ -1,0 +1,14 @@
+[
+ {
+   "cliente_id":1001,
+   "email":"ana@email.com"
+ },
+ {
+   "cliente_id":1002,
+   "email":"luis@email.com"
+ },
+ {
+   "cliente_id":1004,
+   "email":"carlos@email.com"
+ }
+]

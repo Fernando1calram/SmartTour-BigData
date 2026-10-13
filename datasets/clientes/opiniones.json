@@ -1,0 +1,114 @@
+[
+    {
+        "cliente_id": 1,
+        "valoracion": 3
+    },
+    {
+        "cliente_id": 2,
+        "valoracion": 3
+    },
+    {
+        "cliente_id": 3,
+        "valoracion": 4
+    },
+    {
+        "cliente_id": 4,
+        "valoracion": 4
+    },
+    {
+        "cliente_id": 5,
+        "valoracion": 3
+    },
+    {
+        "cliente_id": 6,
+        "valoracion": 3
+    },
+    {
+        "cliente_id": 7,
+        "valoracion": 5
+    },
+    {
+        "cliente_id": 8,
+        "valoracion": 4
+    },
+    {
+        "cliente_id": 9,
+        "valoracion": 5
+    },
+    {
+        "cliente_id": 10,
+        "valoracion": 4
+    },
+    {
+        "cliente_id": 11,
+        "valoracion": 2
+    },
+    {
+        "cliente_id": 12,
+        "valoracion": 5
+    },
+    {
+        "cliente_id": 13,
+        "valoracion": 5
+    },
+    {
+        "cliente_id": 14,
+        "valoracion": 5
+    },
+    {
+        "cliente_id": 15,
+        "valoracion": 5
+    },
+    {
+        "cliente_id": 16,
+        "valoracion": 5
+    },
+    {
+        "cliente_id": 18,
+        "valoracion": 3
+    },
+    {
+        "cliente_id": 19,
+        "valoracion": 4
+    },
+    {
+        "cliente_id": 20,
+        "valoracion": 3
+    },
+    {
+        "cliente_id": 21,
+        "valoracion": 4
+    },
+    {
+        "cliente_id": 22,
+        "valoracion": 2
+    },
+    {
+        "cliente_id": 23,
+        "valoracion": 4
+    },
+    {
+        "cliente_id": 24,
+        "valoracion": 5
+    },
+    {
+        "cliente_id": 25,
+        "valoracion": 3
+    },
+    {
+        "cliente_id": 26,
+        "valoracion": 5
+    },
+    {
+        "cliente_id": 27,
+        "valoracion": 4
+    },
+    {
+        "cliente_id": 29,
+        "valoracion": 4
+    },
+    {
+        "cliente_id": 30,
+        "valoracion": 5
+    }
+]
