@@ -1,0 +1,5 @@
+,id_cliente,nombre,ciudad,fecha_alta,producto,cantidad,importe,email
+0,1001,Ana,Madrid,2024-01-15,Hotel 3 noches,1.0,120.5,ana@email.com
+1,1002,Luis,Salamanca,2024-02-20,Vuelo,2.0,180.0,luis@email.com
+2,1003,Marta,Valladolid,2024-03-18,Tour guiado,1.0,45.0,
+3,1004,Carlos,,2024-04-05,,,,carlos@email.com
