@@ -1,6 +1,101 @@
 id_cliente,nombre,ciudad,fecha_alta
-1001,Ana,Madrid,15/01/2024
-1002,luis,salamanca,20/02/2024
-1003,Marta,Valladolid,18/03/2024
-1003,Marta,Valladolid,18/03/2024
-1004,Carlos,,05/04/2024
+1037,rosa,SEGOVIA,15/09/2024
+1027,Carmen,VIGO ,20/11/2024
+1080,elena,MURCIA ,06/05/2024
+1093,Ainhoa,,02/10/2024
+1050,Javier,Murcia,31/05/2024
+1017,Hugo,Vigo,11/08/2024
+1095,teresa,Murcia,04/05/2024
+1072,Sergio,Valencia,05/12/2024
+1088,Julia,Segovia,07/08/2024
+1023,Ruben,TOLEDO,12/11/2024
+1015,LAURA,Madrid,12/08/2024
+1040,Ivan,Sevilla,22/03/2024
+1053,Laura,Burgos,14/06/2024
+1014,Lucia,BURGOS,24/10/2024
+1090,CARLOS,Valencia,20/05/2024
+1046,Julia,Valencia,02/07/2024
+1013, nerea,Malaga,26/08/2024
+1067,Clara,Salamanca,25/05/2024
+1021,noelia,Segovia,05/03/2024
+1019,Nerea,VIGO,17/07/2024
+1051,Ruben,Granada,04/04/2024
+1003, sergio,Valladolid,15/04/2024
+1018,beatriz,BILBAO,16/10/2024
+1087,Victor,Sevilla,11/07/2024
+1007, rosa,ZARAGOZA ,11/06/2024
+1098,HUGO,Valencia,28/07/2024
+1052,Patricia,Madrid,11/07/2024
+1031,pablo,Valencia,02/08/2024
+1075,rosa,Burgos,03/10/2024
+1097,Pablo,valladolid,23/03/2024
+1066,Adrian,Bilbao,24/10/2024
+1055,Marta,Sevilla,23/09/2024
+1028,Clara,Zaragoza,17/08/2024
+1059,Sofia,VALENCIA,16/07/2024
+1034,lucia,ALICANTE,30/03/2024
+1044,Iker,Bilbao,21/05/2024
+1036,OSCAR ,Alicante,10/11/2024
+1022,Sergio,Valladolid,29/03/2024
+1033,Ivan,Malaga,10/05/2024
+1071,carlos,Valladolid,24/08/2024
+1063,Sergio,Burgos,04/10/2024
+1100,MARCOS,VALENCIA,20/03/2024
+1074,Carlos,Vigo,07/06/2024
+1060,Sofia,Malaga,18/11/2024
+1041,Paula,Segovia,20/10/2024
+1012,Sonia,,13/03/2024
+1078, rosa,Murcia,22/03/2024
+1096,Adrian,burgos,28/10/2024
+1029,Beatriz,Burgos,23/03/2024
+1082,Beatriz,murcia,17/09/2024
+1030,MIGUEL,Cordoba,08/01/2024
+1032,MARTA ,Vigo,26/01/2024
+1003, sergio,Valladolid,15/04/2024
+1083,Beatriz,Granada,23/04/2024
+1002,NOELIA ,Cordoba,11/11/2024
+1086,Adrian,CORDOBA ,07/11/2024
+1079,Sofia,SEVILLA ,12/04/2024
+1089,Lucia,zaragoza,18/05/2024
+1004,Hugo,Burgos,29/07/2024
+1091,laura,Sevilla,02/07/2024
+1092,Javier, toledo,07/01/2024
+1011,PAULA , cordoba,09/09/2024
+1047,Paula,Murcia,26/05/2024
+1006,Carlos,Alicante,12/03/2024
+1038,SOFIA ,Madrid,19/05/2024
+1091,laura,Sevilla,02/07/2024
+1035,Luis,Bilbao,09/05/2024
+1065,Ivan,Salamanca,21/05/2024
+1062,Elena,Toledo,11/05/2024
+1054,Carmen,Valladolid,10/05/2024
+1081,Pablo,Murcia,23/09/2024
+1025,Jorge, malaga,15/01/2024
+1057,Laura,Segovia,07/03/2024
+1070,Rosa,Burgos,04/08/2024
+1064,CARMEN,Valencia,26/02/2024
+1084,Marta,Murcia,23/11/2024
+1061,Daniel, valencia,14/07/2024
+1020,Jorge,valencia,23/10/2024
+1008,AINHOA ,VALENCIA,10/01/2024
+1056,Carmen,ALICANTE ,16/05/2024
+1076,NEREA,Salamanca,10/06/2024
+1001,Patricia,BILBAO ,15/05/2024
+1045,victor, granada,11/06/2024
+1009,Nerea,Malaga,18/10/2024
+1049,Beatriz,Malaga,09/03/2024
+1099,Rocio,Alicante,15/07/2024
+1039,Paula,Burgos,25/02/2024
+1010,Beatriz,Malaga,06/11/2024
+1043,Beatriz,Toledo,06/05/2024
+1073,Rosa,Bilbao,23/10/2024
+1064,CARMEN,Valencia,26/02/2024
+1016,ruben,Zaragoza,02/05/2024
+1058,Silvia,,28/10/2024
+1094,Ivan,Valencia,13/03/2024
+1024,Sofia,Madrid,13/10/2024
+1085,Marcos,Sevilla,29/02/2024
+1068,JORGE ,Cordoba,05/07/2024
+1026,Jorge,Zaragoza,26/11/2024
+1069,Lucia,SEVILLA ,26/08/2024
+1048,Carmen,SALAMANCA,14/05/2024
