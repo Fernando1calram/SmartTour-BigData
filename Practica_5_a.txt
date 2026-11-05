@@ -1,0 +1,88 @@
+# 1
+
+| Archivo        | Información principal                                                                                                                           | Registro                                       | Posible clave primaria                           | Relaciones con otros archivos                                                      |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| hoteles.csv    | Alojamientos: tipo, categoría, nombre, dirección, municipio, provincia, plazas, coordenadas y accesibilidad. hoteles.csv                        | Un hotel, hostal, pensión, motel o residencia. | N.Registro → id_hotel                            | Municipio y Provincia se relacionan con municipios.csv. hoteles.csv+1              |
+| municipios.csv | Municipios: código INE, provincia, población, comarca, mancomunidades y coordenadas. municipios.csv                                             | Un municipio de Castilla y León.               | CodMunicipio / CodINE → id_municipio             | Es la tabla maestra geográfica para hoteles, monumentos y oficinas. municipios.csv |
+| monumentos.csv | Monumentos y recursos patrimoniales: nombre, tipo, categoría, época, descripción, dirección, municipio, provincia y coordenadas. monumentos.csv | Un monumento o recurso turístico.              | Identificador interno del recurso → id_monumento | Municipio y Provincia se relacionan con municipios.csv. monumentos.csv+1           |
+| oficinas.csv   | Oficinas de turismo, centros de recepción de visitantes y puntos de información: localidad, tipo, nombre y ámbito. oficinas.csv                 | Una oficina o punto de información turística.  | Identificador interno generado → id_oficina      | Localidad y Provincia se relacionan con municipios.csv. oficinas.csv+1             |
+
+# 2
+
+Hecho elegido: número de visitantes
+
+| Elemento  | Tabla               | Justificación                                                                                            |
+| --------- | ------------------- | -------------------------------------------------------------------------------------------------------- |
+| Hecho     | Fact_Visitas        | Almacena un evento medible y cuantificable: visitantes por fecha, municipio, hotel, monumento y oficina. |
+| Dimensión | Dim_Fecha           | Permite analizar estacionalidad, meses, trimestres, días laborables y festivos.                          |
+| Dimensión | Dim_Municipio       | Permite agrupar por municipio, provincia, comarca y población. municipios.csv                            |
+| Dimensión | Dim_Hotel           | Describe el alojamiento asociado a la visita: tipo, categoría y plazas. hoteles.csv                      |
+| Dimensión | Dim_Monumento       | Describe el recurso visitado: tipo, categoría, época histórica y ubicación. monumentos.csv               |
+| Dimensión | Dim_Oficina_Turismo | Permite analizar la procedencia o canal de información del visitante. oficinas.csv                       |
+
+# 3
+
+Hechos: Fact_Visitas
+
+| Campo                | Tipo          | Descripción                                 |
+| -------------------- | ------------- | ------------------------------------------- |
+| id_visita            | INT           | Clave primaria.                             |
+| id_fecha             | INT           | FK a Dim_Fecha.                             |
+| id_municipio         | INT           | FK a Dim_Municipio.                         |
+| id_hotel             | INT           | FK a Dim_Hotel.                             |
+| id_monumento         | INT           | FK a Dim_Monumento.                         |
+| id_oficina           | INT           | FK a Dim_Oficina_Turismo.                   |
+| numero_visitantes    | INT           | Medida: visitantes registrados.             |
+| numero_reservas      | INT           | Medida opcional: reservas asociadas.        |
+| gasto_medio_euros    | DECIMAL(10,2) | Medida opcional: gasto medio por visitante. |
+| ocupacion_porcentaje | DECIMAL(5,2)  | Medida opcional: ocupación hotelera.        |
+
+Dimensiones:
+
+| Dimensión           | Atributos principales                                                                                    |
+| ------------------- | -------------------------------------------------------------------------------------------------------- |
+| Dim_Fecha           | id_fecha, fecha, dia, mes, nombre_mes, trimestre, anio, dia_semana, es_festivo                           |
+| Dim_Municipio       | id_municipio, codigo_ine, municipio, provincia, comarca, poblacion, longitud, latitud municipios.csv     |
+| Dim_Hotel           | id_hotel, nombre, tipo, categoria, direccion, codigo_postal, plazas, accesible, web hoteles.csv          |
+| Dim_Monumento       | id_monumento, nombre, tipo, categoria, epoca, direccion, codigo_postal, latitud, longitud monumentos.csv |
+| Dim_Oficina_Turismo | id_oficina, nombre, tipo, establecimiento, ambito, localidad oficinas.csv                                |
+
+# 5
+
+¿Por qué Fact_Visitas es una tabla de hechos?
+    - Porque registra un suceso medible del negocio turístico: la visita. Su finalidad es almacenar valores numéricos que se pueden sumar, promediar o comparar en el tiempo y por distintas dimensiones.
+
+¿Qué medidas contiene?
+    - La medida principal es numero_visitantes. Como medidas complementarias se incluyen numero_reservas, gasto_medio_euros y ocupacion_porcentaje, útiles para analizar la actividad turística desde varias perspectivas.
+
+¿Por qué las demás tablas son dimensiones?
+    - Porque describen el contexto del hecho y responden a preguntas como cuándo, dónde, en qué alojamiento, ante qué monumento y a través de qué oficina. No son eventos medibles, sino catálogos descriptivos.
+
+Ventajas del esquema en estrella:
+
+    - Es sencillo de entender: una tabla central de hechos rodeada de dimensiones.
+    - Facilita consultas SQL con JOIN entre la tabla de hechos y pocas tablas de dimensiones.
+    - Es adecuado para herramientas de BI y cuadros de mando.
+    - Permite agregar datos por día, mes, año, municipio, provincia, tipo de monumento o categoría de hotel.
+    - Separa claramente los datos descriptivos de los datos numéricos analizables.
+
+Consultas que permitirá realizar:
+
+    - Total de visitantes por municipio, provincia o comarca.
+    - Evolución mensual o anual del turismo.
+    - Monumentos más visitados por tipo o época histórica.
+    - Hoteles con mayor número de visitantes asociados o mayor ocupación.
+    - Comparativa entre oficinas de turismo y su ámbito municipal o regional.
+    - Análisis cruzado de visitantes, reservas y gasto medio.
+
+# 6
+
+| N.º | Pregunta de negocio propuesta                                                                                                                     | Dimensiones utilizadas              | Análisis que permite realizar                                                                                 |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| 1   | ¿Cómo se distribuyen las visitas a monumentos entre los días laborables y los fines de semana?                                                    | Dim_Fecha                           | Comparar las visitas acumuladas en ambos tipos de día.                                                        |
+| 2   | ¿Qué tipos de monumento visitan con mayor frecuencia las personas que declaran alojarse en hoteles de cuatro estrellas?                           | Dim_Hotel y Dim_Monumento           | Filtrar por categoría del alojamiento y comparar las visitas según el tipo de monumento.                      |
+| 3   | ¿Qué monumentos concentran más visitas asociadas a recomendaciones de oficinas de ámbito municipal y cuáles a oficinas de ámbito regional?        | Dim_Oficina_Turismo y Dim_Monumento | Comparar los monumentos visitados según el ámbito de la oficina informadora.                                  |
+| 4   | ¿En qué trimestres se concentran las visitas a monumentos de cada periodo histórico?                                                              | Dim_Fecha y Dim_Monumento           | Analizar la distribución trimestral de las visitas según la época del monumento.                              |
+| 5   | ¿Qué comarcas reciben más visitas a monumentos de personas alojadas en una provincia diferente a la del monumento?                                | Dim_Municipio y Dim_Hotel           | Comparar la provincia del alojamiento con la del monumento y agrupar las visitas por comarca.                 |
+| 6   | ¿Qué proporción de las visitas a monumentos tiene una oficina de turismo informadora identificada y qué proporción no dispone de esa información? | Dim_Oficina_Turismo                 | Calcular el porcentaje de visitas con oficina conocida frente a las registradas como «No consta / no aplica». |
+| 7   | ¿Cómo cambia entre años el número de visitas a monumentos asociado a cada tipo de alojamiento declarado?                                          | Dim_Fecha y Dim_Hotel               | Comparar las visitas por año y tipo de alojamiento, siempre que se carguen datos de varios años.              |

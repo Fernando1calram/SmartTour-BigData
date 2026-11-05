@@ -1,4 +1,4 @@
-id_alumno,asignatura,nota
+id_alumno,id_asignatura,nota
 1,1,8.75
 1,3,7.50
 2,1,6.25
