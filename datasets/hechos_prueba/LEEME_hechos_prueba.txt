@@ -1,0 +1,41 @@
+SMARTTOUR - DATOS FICTICIOS DE PRUEBA
+
+Tres CSV de 1000 registros cada uno; UTF-8, separador coma y cabecera.
+Claves tomadas exclusivamente de correspondencias unicas del CSV del usuario.
+Recursos disponibles: 1739 hoteles, 1368 monumentos y 241 oficinas.
+Se excluyen 6 monumentos y 22 oficinas pendientes. No se modifican dimensiones.
+Semilla aleatoria: 20261109. Actividad diaria y entradas de hotel: enero-octubre de 2026.
+Las fechas de reserva pueden estar en 2025 y las salidas extenderse a noviembre de 2026.
+Todas las fechas existen en el calendario de 4000 dias generado anteriormente.
+
+REGLAS
+Reservas: una fila por reserva; noches = salida - entrada; reserva <= entrada.
+Importe ficticio por turista y noche, entre 25 y 90 euros. No representa ocupacion real.
+reserva_id se omite del CSV: PostgreSQL lo genera mediante su secuencia.
+Oficinas: una fila por oficina/dia. Visitas = visitantes individuales + personas de grupos.
+Cada grupo tiene 2-8 personas. Consultas son interacciones, pueden superar las visitas.
+Monumentos: una fila por monumento/dia; visitas = entradas de pago + gratuitas.
+Una entrada de pago por persona. Tarifa fija ficticia de 3-12 euros segun monumento.
+No se simulan cierres, aforos ni historia real; no son estadisticas observadas.
+No se garantiza cubrir todos los recursos ni todos los dias: es una muestra de prueba.
+
+CARGA
+1. Copiar los tres *_prueba.csv a datasets/hechos_prueba dentro del proyecto.
+2. El montaje Docker debe exponer esa carpeta como /smarttour/datasets/hechos_prueba.
+3. Ejecutar 01_cargar_hechos.sql en pgAdmin sobre smarttour_db.
+4. Ejecutar 02_validar_hechos.sql.
+Las tres tablas de hechos deben estar vacias. La carga se detiene si no lo estan.
+No ejecutar cada COPY por separado si se quiere conservar la atomicidad.
+Si falla la transaccion, ejecutar ROLLBACK antes de reintentar.
+COPY requiere permiso para leer archivos del servidor; si falla, revisar error y permisos.
+
+TOTALES DE CONTROL
+reservas_turistas: 2981
+reservas_noches: 5607
+reservas_importe: 947454.82
+oficinas_visitas: 75628
+oficinas_grupos: 5917
+oficinas_consultas: 76062
+monumentos_visitas: 286485
+monumentos_entradas: 227202
+monumentos_importe: 1684332.00
