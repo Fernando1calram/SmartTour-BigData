@@ -1,3 +1,15 @@
+-- ============================================================
+-- Lab 05c: Construcción de la base de datos SmartTour
+-- Script de creación de tablas de origen, dimensiones y hechos
+-- ============================================================
+
+
+-- ============================================================
+-- 1. TABLAS DE ORIGEN
+-- Conservan la estructura de los archivos CSV.
+-- ============================================================
+
+
 DROP TABLE IF EXISTS municipios CASCADE;
 CREATE TABLE municipios (
     municipio VARCHAR(150),
@@ -14,6 +26,7 @@ CREATE TABLE municipios (
     coordenada_x TEXT,
     coordenada_y TEXT
 );
+
 
 DROP TABLE IF EXISTS hoteles CASCADE;
 CREATE TABLE hoteles (
@@ -42,6 +55,7 @@ CREATE TABLE hoteles (
     columna_vacia TEXT
 );
 
+
 DROP TABLE IF EXISTS monumentos CASCADE;
 CREATE TABLE monumentos (
     identificador BIGINT,
@@ -64,6 +78,7 @@ CREATE TABLE monumentos (
     coordenadas TEXT
 );
 
+
 DROP TABLE IF EXISTS oficinas CASCADE;
 CREATE TABLE oficinas (
     provincia VARCHAR(100),
@@ -74,13 +89,24 @@ CREATE TABLE oficinas (
     ambito VARCHAR(100)
 );
 
+
+-- ============================================================
+-- 2. IMPORTACIÓN DE LOS ARCHIVOS CSV
+-- ============================================================
+
+-- municipios.csv y hoteles.csv utilizan codificación LATIN1.
+-- monumentos.csv y oficinas.csv utilizan codificación UTF8.
+
 COPY municipios (
     municipio, cod_municipio, provincia, cod_provincia, cod_ine,
     poblacion, mancomunidades, entidades_locales_menores, comarca,
     longitud, latitud, coordenada_x, coordenada_y
 )
 FROM '/smarttour/datasets/municipios/municipios.csv'
-DELIMITER ';' CSV HEADER ENCODING 'LATIN1';
+DELIMITER ';'
+CSV HEADER
+ENCODING 'LATIN1';
+
 
 COPY hoteles (
     n_registro, tipo, categoria, especialidades, nombre, direccion,
@@ -90,7 +116,10 @@ COPY hoteles (
     accesible_discapacidad, columna_vacia
 )
 FROM '/smarttour/datasets/hoteles/hoteles.csv'
-DELIMITER ';' CSV HEADER ENCODING 'LATIN1';
+DELIMITER ';'
+CSV HEADER
+ENCODING 'LATIN1';
+
 
 COPY monumentos (
     identificador, nombre, tipo_monumento, identificador_bic, calle,
@@ -100,13 +129,33 @@ COPY monumentos (
     pto_geolocalizado, poblacion, coordenadas
 )
 FROM '/smarttour/datasets/monumentos/monumentos.csv'
-DELIMITER ';' CSV HEADER ENCODING 'LATIN1';
+DELIMITER ';'
+CSV HEADER
+ENCODING 'UTF8';
+
 
 COPY oficinas (
     provincia, localidad, tipo, nombre_recurso, establecimiento, ambito
 )
 FROM '/smarttour/datasets/oficinas_turismo/oficinas.csv'
-DELIMITER ';' CSV HEADER ENCODING 'LATIN1';
+DELIMITER ';'
+CSV HEADER
+ENCODING 'UTF8';
+
+
+-- ============================================================
+-- 3. CLAVE PRIMARIA EN LA TABLA ORIGINAL DE MUNICIPIOS
+-- ============================================================
+
+ALTER TABLE municipios
+    ADD CONSTRAINT pk_municipios
+    PRIMARY KEY (cod_ine);
+
+
+-- ============================================================
+-- 4. DIMENSIONES
+-- ============================================================
+
 
 DROP TABLE IF EXISTS dim_municipio CASCADE;
 CREATE TABLE dim_municipio (
@@ -121,6 +170,7 @@ CREATE TABLE dim_municipio (
     longitud DECIMAL(12,8),
     latitud DECIMAL(12,8)
 );
+
 
 DROP TABLE IF EXISTS dim_hotel CASCADE;
 CREATE TABLE dim_hotel (
@@ -137,10 +187,12 @@ CREATE TABLE dim_hotel (
     web VARCHAR(500),
     plazas INTEGER,
     accesible_discapacidad BOOLEAN,
+    municipio_key INTEGER,
     fecha_inicio DATE,
     fecha_fin DATE,
     es_actual BOOLEAN DEFAULT TRUE
 );
+
 
 DROP TABLE IF EXISTS dim_monumento CASCADE;
 CREATE TABLE dim_monumento (
@@ -154,8 +206,10 @@ CREATE TABLE dim_monumento (
     codigo_postal VARCHAR(20),
     periodo_historico VARCHAR(500),
     latitud DECIMAL(12,8),
-    longitud DECIMAL(12,8)
+    longitud DECIMAL(12,8),
+    municipio_key INTEGER
 );
+
 
 DROP TABLE IF EXISTS dim_oficina_turismo CASCADE;
 CREATE TABLE dim_oficina_turismo (
@@ -166,8 +220,36 @@ CREATE TABLE dim_oficina_turismo (
     establecimiento VARCHAR(250),
     localidad VARCHAR(200),
     provincia VARCHAR(100),
-    ambito VARCHAR(100)
+    ambito VARCHAR(100),
+    municipio_key INTEGER
 );
+
+
+-- Relación explícita entre cada recurso y su municipio.
+-- Esta relación se resuelve durante la carga de las dimensiones.
+
+ALTER TABLE dim_hotel
+    ADD CONSTRAINT fk_hotel_municipio
+    FOREIGN KEY (municipio_key)
+    REFERENCES dim_municipio(municipio_key);
+
+
+ALTER TABLE dim_monumento
+    ADD CONSTRAINT fk_monumento_municipio
+    FOREIGN KEY (municipio_key)
+    REFERENCES dim_municipio(municipio_key);
+
+
+ALTER TABLE dim_oficina_turismo
+    ADD CONSTRAINT fk_oficina_municipio
+    FOREIGN KEY (municipio_key)
+    REFERENCES dim_municipio(municipio_key);
+
+
+-- ============================================================
+-- 5. DIMENSIÓN TEMPORAL
+-- ============================================================
+
 
 DROP TABLE IF EXISTS fechas CASCADE;
 CREATE TABLE fechas (
@@ -184,40 +266,62 @@ CREATE TABLE fechas (
     temporada_turistica VARCHAR(30)
 );
 
+
+-- ============================================================
+-- 6. TABLAS DE HECHOS
+-- ============================================================
+
+
 DROP TABLE IF EXISTS reservas CASCADE;
 CREATE TABLE reservas (
     reserva_id BIGSERIAL PRIMARY KEY,
-    fecha_reserva_key INTEGER NOT NULL REFERENCES fechas(fecha_key),
-    fecha_entrada_key INTEGER NOT NULL REFERENCES fechas(fecha_key),
-    fecha_salida_key INTEGER NOT NULL REFERENCES fechas(fecha_key),
-    hotel_key INTEGER NOT NULL REFERENCES dim_hotel(hotel_key),
-    municipio_key INTEGER NOT NULL REFERENCES dim_municipio(municipio_key),
+    fecha_reserva_key INTEGER NOT NULL
+        REFERENCES fechas(fecha_key),
+    fecha_entrada_key INTEGER NOT NULL
+        REFERENCES fechas(fecha_key),
+    fecha_salida_key INTEGER NOT NULL
+        REFERENCES fechas(fecha_key),
+    hotel_key INTEGER NOT NULL
+        REFERENCES dim_hotel(hotel_key),
+    municipio_key INTEGER NOT NULL
+        REFERENCES dim_municipio(municipio_key),
     turistas INTEGER NOT NULL CHECK (turistas > 0),
     noches INTEGER NOT NULL CHECK (noches > 0),
     importe DECIMAL(12,2) NOT NULL CHECK (importe >= 0),
     num_reservas INTEGER NOT NULL DEFAULT 1 CHECK (num_reservas = 1)
 );
 
+
 DROP TABLE IF EXISTS visitas CASCADE;
 CREATE TABLE visitas (
-    fecha_key INTEGER NOT NULL REFERENCES fechas(fecha_key),
-    monumento_key INTEGER NOT NULL REFERENCES dim_monumento(monumento_key),
-    municipio_key INTEGER NOT NULL REFERENCES dim_municipio(municipio_key),
+    fecha_key INTEGER NOT NULL
+        REFERENCES fechas(fecha_key),
+    monumento_key INTEGER NOT NULL
+        REFERENCES dim_monumento(monumento_key),
+    municipio_key INTEGER NOT NULL
+        REFERENCES dim_municipio(municipio_key),
     num_visitas INTEGER NOT NULL CHECK (num_visitas >= 0),
     num_entradas INTEGER NOT NULL DEFAULT 0 CHECK (num_entradas >= 0),
-    importe_entradas DECIMAL(12,2) NOT NULL DEFAULT 0 CHECK (importe_entradas >= 0),
-    num_visitas_gratuitas INTEGER NOT NULL DEFAULT 0 CHECK (num_visitas_gratuitas >= 0),
+    importe_entradas DECIMAL(12,2) NOT NULL DEFAULT 0
+        CHECK (importe_entradas >= 0),
+    num_visitas_gratuitas INTEGER NOT NULL DEFAULT 0
+        CHECK (num_visitas_gratuitas >= 0),
     PRIMARY KEY (fecha_key, monumento_key)
 );
 
+
 DROP TABLE IF EXISTS visitadadas CASCADE;
 CREATE TABLE visitadadas (
-    fecha_key INTEGER NOT NULL REFERENCES fechas(fecha_key),
-    oficina_key INTEGER NOT NULL REFERENCES dim_oficina_turismo(oficina_key),
-    municipio_key INTEGER NOT NULL REFERENCES dim_municipio(municipio_key),
+    fecha_key INTEGER NOT NULL
+        REFERENCES fechas(fecha_key),
+    oficina_key INTEGER NOT NULL
+        REFERENCES dim_oficina_turismo(oficina_key),
+    municipio_key INTEGER NOT NULL
+        REFERENCES dim_municipio(municipio_key),
     num_visitas INTEGER NOT NULL CHECK (num_visitas >= 0),
     num_grupos INTEGER NOT NULL DEFAULT 0 CHECK (num_grupos >= 0),
     num_consultas INTEGER NOT NULL DEFAULT 0 CHECK (num_consultas >= 0),
-    num_visitas_individuales INTEGER NOT NULL DEFAULT 0 CHECK (num_visitas_individuales >= 0),
+    num_visitas_individuales INTEGER NOT NULL DEFAULT 0
+        CHECK (num_visitas_individuales >= 0),
     PRIMARY KEY (fecha_key, oficina_key)
 );

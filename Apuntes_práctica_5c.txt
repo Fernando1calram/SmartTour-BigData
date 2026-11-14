@@ -1,0 +1,963 @@
+# 13
+
+Las tres relaciones son de uno a muchos:
+    * Municipios -> Hoteles: un municipio puede tener 0, uno o mucho y cada hotel pertenece a un municipio
+    * Municipios -> Monumentos: un municipio puede tener cero, uno o muchos monumentos y cada monumento pertenece a un municipio
+    * Municipios -> Oficinas de turismo: un municipio puede tener cero, una o muchas oficinas y cada ofricina pertenece a un municipio
+
+dim_municipio 1 ── N dim_hotel
+dim_municipio 1 ── N dim_monumento
+dim_municipio 1 ── N dim_oficina_turismo
+
+dim_municipio 1 ── N reservas  N ── 1 dim_hotel
+dim_municipio 1 ── N reservas  N ── 1 fechas
+
+dim_municipio 1 ── N visitas   N ── 1 dim_monumento
+dim_municipio 1 ── N visitas   N ── 1 fechas
+
+dim_municipio 1 ── N visitadadas N ── 1 dim_oficina_turismo
+dim_municipio 1 ── N visitadadas N ── 1 fechas
+
+| Nombre en práctica      | Nombre usado              | Proceso de negocio            |
+| ----------------------- | ------------------------- | ----------------------------- |
+| fact_reservas_hotel     | reservas                  | Reservas hoteleras            |
+| fact_visitas_oficinas   | visitadadas               | Visitas a oficinas de turismo |
+| fact_visitas_monumentos | visitas                   | Visitas a monumentos          |
+
+                    fechas
+                      │
+        ┌─────────────┼─────────────┐
+        │             │             │
+     reservas     visitadadas      visitas
+        │             │             │
+   dim_hotel   dim_oficina   dim_monumento
+        │             │             │
+        └─────────────┼─────────────┘
+                      │
+                dim_municipio
+
+# 2.1
+
+- ¿Cuántas reservas se realizaron en octubre?
+
+SELECT
+    COUNT(*) AS total_reservas
+FROM reservas r
+JOIN fechas f
+    ON r.fecha_reserva_key = f.fecha_key
+WHERE
+    f.mes = 10;
+
+- ¿Cuántos turistas llegaron durante agosto?
+
+SELECT
+    SUM(r.turistas) AS total_turistas_llegados
+FROM reservas r
+JOIN fechas f
+    ON r.fecha_entrada_key = f.fecha_key
+WHERE
+    f.mes = 8;
+
+- ¿Cuántas reservas se realizaron para el próximo verano?
+
+SELECT
+    COUNT(*) AS reservas_proximo_verano
+FROM reservas r
+JOIN fechas f
+    ON r.fecha_entrada_key = f.fecha_key
+WHERE
+    f.anio = 2027
+    AND f.mes IN (6, 7, 8);
+
+- ¿Cuál es la estancia media de los turistas?
+
+SELECT
+    ROUND(
+        AVG(r.noches)::NUMERIC,
+        2
+    ) AS estancia_media_noches
+FROM reservas r;
+
+# 2.2
+
+- ¿Qué oficinas reciben más visitantes?
+
+SELECT
+    o.nombre AS oficina,
+    o.tipo AS tipo_oficina,
+    SUM(v.num_visitas) AS total_visitantes
+FROM visitadadas v
+JOIN dim_oficina_turismo o
+    ON v.oficina_key = o.oficina_key
+GROUP BY
+    o.oficina_key,
+    o.nombre,
+    o.tipo
+ORDER BY
+    total_visitantes DESC;
+
+- ¿Qué municipios tienen más consultas turísticas?
+SELECT
+    mu.nombre AS municipio,
+    mu.provincia,
+    SUM(v.num_consultas) AS total_consultas,
+    SUM(v.num_visitas) AS total_visitas
+FROM visitadadas v
+JOIN dim_municipio mu
+    ON v.municipio_key = mu.municipio_key
+GROUP BY
+    mu.municipio_key,
+    mu.nombre,
+    mu.provincia
+ORDER BY
+    total_consultas DESC;
+
+- ¿Qué meses concentran mayor actividad?
+
+SELECT
+    f.anio,
+    f.mes,
+    f.nombre_mes,
+    SUM(v.num_visitas) AS total_visitas,
+    SUM(v.num_consultas) AS total_consultas,
+    SUM(v.num_grupos) AS total_grupos,
+    SUM(v.num_visitas_individuales) AS total_visitas_individuales
+FROM visitadadas v
+JOIN fechas f
+    ON v.fecha_key = f.fecha_key
+GROUP BY
+    f.anio,
+    f.mes,
+    f.nombre_mes
+ORDER BY
+    f.anio,
+    f.mes;
+
+- ¿Qué oficinas tienen una mayor afluencia durante los fines de semana?
+
+SELECT
+    o.nombre AS oficina,
+    SUM(v.num_visitas) FILTER (
+        WHERE f.es_fin_semana = TRUE
+    ) AS visitas_fin_de_semana,
+    SUM(v.num_visitas) FILTER (
+        WHERE f.es_fin_semana = FALSE
+    ) AS visitas_dias_laborables,
+    ROUND(
+        SUM(v.num_visitas) FILTER (
+            WHERE f.es_fin_semana = TRUE
+        )::NUMERIC
+        /
+        NULLIF(
+            SUM(v.num_visitas) FILTER (
+                WHERE f.es_fin_semana = FALSE
+            ),
+            0
+        ),
+        2
+    ) AS ratio_fin_semana_laborables
+FROM visitadadas v
+JOIN dim_oficina_turismo o
+    ON v.oficina_key = o.oficina_key
+JOIN fechas f
+    ON v.fecha_key = f.fecha_key
+GROUP BY
+    o.oficina_key,
+    o.nombre
+ORDER BY
+    visitas_fin_de_semana DESC;
+
+# 2.3
+
+- ¿Cuáles son los monumentos más visitados?
+
+SELECT
+    mo.nombre AS monumento,
+    mo.tipo AS tipo_monumento,
+    SUM(v.num_visitas) AS total_visitas
+FROM visitas v
+JOIN dim_monumento mo
+    ON v.monumento_key = mo.monumento_key
+GROUP BY
+    mo.monumento_key,
+    mo.nombre,
+    mo.tipo
+ORDER BY
+    total_visitas DESC;
+
+- ¿Qué municipios reciben más visitantes?
+
+SELECT
+    mu.nombre AS municipio,
+    mu.provincia,
+    SUM(v.num_visitas) AS total_visitantes
+FROM visitas v
+JOIN dim_municipio mu
+    ON v.municipio_key = mu.municipio_key
+GROUP BY
+    mu.municipio_key,
+    mu.nombre,
+    mu.provincia
+ORDER BY
+    total_visitantes DESC;
+
+- ¿Qué monumentos tienen mayor estacionalidad?
+
+WITH visitas_mensuales AS (
+    SELECT
+        mo.monumento_key,
+        mo.nombre AS monumento,
+        f.mes,
+        f.nombre_mes,
+        SUM(v.num_visitas) AS visitas_mes
+    FROM visitas v
+    JOIN dim_monumento mo
+        ON v.monumento_key = mo.monumento_key
+    JOIN fechas f
+        ON v.fecha_key = f.fecha_key
+    GROUP BY
+        mo.monumento_key,
+        mo.nombre,
+        f.mes,
+        f.nombre_mes
+),
+media_monumento AS (
+    SELECT
+        monumento_key,
+        AVG(visitas_mes) AS media_mensual
+    FROM visitas_mensuales
+    GROUP BY monumento_key
+)
+SELECT
+    vm.monumento,
+    vm.nombre_mes,
+    vm.visitas_mes,
+    ROUND(mm.media_mensual, 2) AS media_mensual,
+    ROUND(
+        (vm.visitas_mes - mm.media_mensual) / NULLIF(mm.media_mensual, 0) * 100,
+        2
+    ) AS desviacion_porcentual
+FROM visitas_mensuales vm
+JOIN media_monumento mm
+    ON vm.monumento_key = mm.monumento_key
+ORDER BY
+    desviacion_porcentual DESC,
+    vm.monumento,
+    vm.mes;
+
+- ¿Qué ingresos generan los monumentos?
+
+SELECT
+    mo.nombre AS monumento,
+    SUM(v.num_entradas) AS entradas_vendidas,
+    SUM(v.importe_entradas) AS ingresos_totales,
+    SUM(v.num_visitas_gratuitas) AS visitas_gratuitas,
+    SUM(v.num_visitas) AS total_visitas
+FROM visitas v
+JOIN dim_monumento mo
+    ON v.monumento_key = mo.monumento_key
+GROUP BY
+    mo.monumento_key,
+    mo.nombre
+ORDER BY
+    ingresos_totales DESC;
+
+- ¿Qué relación existe entre las visitas y los meses del año?
+
+SELECT
+    f.anio,
+    f.mes,
+    f.nombre_mes,
+    SUM(v.num_visitas) AS total_visitas,
+    SUM(v.num_entradas) AS total_entradas,
+    SUM(v.importe_entradas) AS ingresos_entradas
+FROM visitas v
+JOIN fechas f
+    ON v.fecha_key = f.fecha_key
+GROUP BY
+    f.anio,
+    f.mes,
+    f.nombre_mes
+ORDER BY
+    f.anio,
+    f.mes;
+
+# 4
+
+- Esa vista permitirá comparar, para cada municipio y periodo:
+- Turistas alojados procedentes de reservas.
+- Visitas a oficinas procedentes de visitadadas.
+- Visitas a monumentos procedentes de visitas.
+
+CREATE OR REPLACE VIEW vw_actividad_turistica_municipio AS
+WITH reservas_mensuales AS (
+    SELECT
+        r.municipio_key,
+        f.anio,
+        f.mes,
+        f.nombre_mes,
+        SUM(r.turistas) AS turistas_alojados,
+        SUM(r.importe) AS ingresos_hoteles,
+        COUNT(*) AS num_reservas
+    FROM reservas r
+    JOIN fechas f
+        ON r.fecha_entrada_key = f.fecha_key
+    GROUP BY
+        r.municipio_key,
+        f.anio,
+        f.mes,
+        f.nombre_mes
+),
+oficinas_mensuales AS (
+    SELECT
+        v.municipio_key,
+        f.anio,
+        f.mes,
+        f.nombre_mes,
+        SUM(v.num_visitas) AS visitas_oficinas,
+        SUM(v.num_consultas) AS consultas_turisticas
+    FROM visitadadas v
+    JOIN fechas f
+        ON v.fecha_key = f.fecha_key
+    GROUP BY
+        v.municipio_key,
+        f.anio,
+        f.mes,
+        f.nombre_mes
+),
+monumentos_mensuales AS (
+    SELECT
+        v.municipio_key,
+        f.anio,
+        f.mes,
+        f.nombre_mes,
+        SUM(v.num_visitas) AS visitas_monumentos,
+        SUM(v.num_entradas) AS entradas_monumentos,
+        SUM(v.importe_entradas) AS ingresos_monumentos
+    FROM visitas v
+    JOIN fechas f
+        ON v.fecha_key = f.fecha_key
+    GROUP BY
+        v.municipio_key,
+        f.anio,
+        f.mes,
+        f.nombre_mes
+)
+SELECT
+    mu.nombre AS municipio,
+    mu.provincia,
+    r.anio,
+    r.mes,
+    r.nombre_mes,
+    COALESCE(r.turistas_alojados, 0) AS turistas_alojados,
+    COALESCE(r.ingresos_hoteles, 0) AS ingresos_hoteles,
+    COALESCE(r.num_reservas, 0) AS num_reservas,
+    COALESCE(o.visitas_oficinas, 0) AS visitas_oficinas,
+    COALESCE(o.consultas_turisticas, 0) AS consultas_turisticas,
+    COALESCE(m.visitas_monumentos, 0) AS visitas_monumentos,
+    COALESCE(m.entradas_monumentos, 0) AS entradas_monumentos,
+    COALESCE(m.ingresos_monumentos, 0) AS ingresos_monumentos
+FROM reservas_mensuales r
+LEFT JOIN oficinas_mensuales o
+    ON r.municipio_key = o.municipio_key
+   AND r.anio = o.anio
+   AND r.mes = o.mes
+LEFT JOIN monumentos_mensuales m
+    ON r.municipio_key = m.municipio_key
+   AND r.anio = m.anio
+   AND r.mes = m.mes
+JOIN dim_municipio mu
+    ON r.municipio_key = mu.municipio_key;
+
+# COMPROBACION
+
+SELECT *
+FROM vw_actividad_turistica_municipio
+ORDER BY
+    municipio,
+    anio,
+    mes;
+
+# CONSULTAS FINALES
+
+# CONSULTA 1
+
+SELECT
+    m.municipio_key,
+    m.nombre AS municipio,
+    m.provincia,
+    COUNT(*) AS total_reservas
+FROM public.reservas r
+JOIN public.dim_municipio m
+    ON r.municipio_key = m.municipio_key
+GROUP BY
+    m.municipio_key,
+    m.nombre,
+    m.provincia
+ORDER BY
+    total_reservas DESC,
+    municipio;
+
+# VISTA 1
+
+CREATE OR REPLACE VIEW public.vw_reservas_municipio AS
+SELECT
+    m.municipio_key,
+    m.nombre AS municipio,
+    m.provincia,
+    COUNT(*) AS total_reservas,
+    SUM(r.turistas) AS turistas_en_reservas,
+    SUM(r.importe) AS importe_reservas
+FROM public.reservas r
+JOIN public.dim_municipio m
+    ON r.municipio_key = m.municipio_key
+GROUP BY
+    m.municipio_key,
+    m.nombre,
+    m.provincia;
+
+# LLAMADA A LA VISTA 1
+
+SELECT
+    municipio,
+    provincia,
+    total_reservas
+FROM public.vw_reservas_municipio
+ORDER BY
+    total_reservas DESC,
+    municipio;
+
+# CONSULTA 2
+
+SELECT
+    m.provincia,
+    SUM(r.turistas) AS turistas_en_reservas
+FROM public.reservas r
+JOIN public.dim_municipio m
+    ON r.municipio_key = m.municipio_key
+GROUP BY
+    m.provincia
+ORDER BY
+    turistas_en_reservas DESC,
+    m.provincia;
+
+# VISTA 2
+
+CREATE OR REPLACE VIEW public.vw_turistas_provincia AS
+SELECT
+    m.provincia,
+    SUM(r.turistas) AS turistas_en_reservas
+FROM public.reservas r
+JOIN public.dim_municipio m
+    ON r.municipio_key = m.municipio_key
+GROUP BY
+    m.provincia;
+
+# LLAMADA A LA VISTA 2
+
+SELECT *
+FROM public.vw_turistas_provincia
+ORDER BY
+    turistas_en_reservas DESC,
+    provincia;
+
+# CONSULTA 3
+
+SELECT
+    f.anio,
+    f.mes,
+    f.nombre_mes,
+    COUNT(*) AS total_reservas,
+    SUM(r.importe) AS importe_reservado
+FROM public.reservas r
+JOIN public.fechas f
+    ON r.fecha_reserva_key = f.fecha_key
+GROUP BY
+    f.anio,
+    f.mes,
+    f.nombre_mes
+ORDER BY
+    f.anio,
+    f.mes;
+
+# VISTA 3
+
+CREATE OR REPLACE VIEW public.vw_ingresos_mensuales AS
+SELECT
+    f.anio,
+    f.mes,
+    f.nombre_mes,
+    COUNT(*) AS total_reservas,
+    SUM(r.importe) AS importe_reservado
+FROM public.reservas r
+JOIN public.fechas f
+    ON r.fecha_reserva_key = f.fecha_key
+GROUP BY
+    f.anio,
+    f.mes,
+    f.nombre_mes;
+
+# LLAMADA A LA VISTA 3
+
+SELECT *
+FROM public.vw_ingresos_mensuales
+ORDER BY
+    anio,
+    mes;
+
+# CONSULTA 4
+
+SELECT
+    h.hotel_key,
+    h.nombre AS hotel,
+    h.categoria,
+    COUNT(*) AS total_reservas,
+    SUM(r.turistas) AS turistas_en_reservas,
+    SUM(r.noches) AS noches_acumuladas_reservas,
+    SUM(r.turistas::BIGINT * r.noches) AS pernoctaciones_persona,
+    ROUND(
+        AVG(r.noches)::NUMERIC,
+        2
+    ) AS media_noches_reserva,
+    SUM(r.importe) AS importe_reservas
+FROM public.reservas r
+JOIN public.dim_hotel h
+    ON r.hotel_key = h.hotel_key
+GROUP BY
+    h.hotel_key,
+    h.nombre,
+    h.categoria
+ORDER BY
+    turistas_en_reservas DESC,
+    hotel;
+
+# VISTA 4
+
+CREATE OR REPLACE VIEW public.vw_estancia_hoteles AS
+SELECT
+    h.hotel_key,
+    h.nombre AS hotel,
+    h.categoria,
+    COUNT(*) AS total_reservas,
+    SUM(r.turistas) AS turistas_en_reservas,
+    SUM(r.noches) AS noches_acumuladas_reservas,
+    SUM(r.turistas::BIGINT * r.noches) AS pernoctaciones_persona,
+    ROUND(
+        AVG(r.noches)::NUMERIC,
+        2
+    ) AS media_noches_reserva,
+    SUM(r.importe) AS importe_reservas
+FROM public.reservas r
+JOIN public.dim_hotel h
+    ON r.hotel_key = h.hotel_key
+GROUP BY
+    h.hotel_key,
+    h.nombre,
+    h.categoria;
+
+# LLAMADA A LA VISTA 4
+
+SELECT
+    hotel,
+    turistas_en_reservas AS total_turistas,
+    noches_acumuladas_reservas AS total_noches,
+    media_noches_reserva
+FROM public.vw_estancia_hoteles
+ORDER BY
+    total_turistas DESC,
+    hotel;
+
+# CONSULTA 5
+
+SELECT
+    o.oficina_key,
+    o.nombre AS oficina,
+    o.ambito,
+    SUM(v.num_visitas) AS total_visitas,
+    SUM(v.num_grupos) AS total_grupos,
+    SUM(v.num_consultas) AS total_consultas,
+    SUM(v.num_visitas_individuales) AS visitas_individuales
+FROM public.visitadadas v
+JOIN public.dim_oficina_turismo o
+    ON v.oficina_key = o.oficina_key
+GROUP BY
+    o.oficina_key,
+    o.nombre,
+    o.ambito
+ORDER BY
+    total_visitas DESC,
+    oficina;
+
+# VISTA 5
+
+CREATE OR REPLACE VIEW public.vw_visitas_oficinas AS
+SELECT
+    o.oficina_key,
+    o.nombre AS oficina,
+    o.ambito,
+    SUM(v.num_visitas) AS total_visitas,
+    SUM(v.num_grupos) AS total_grupos,
+    SUM(v.num_consultas) AS total_consultas,
+    SUM(v.num_visitas_individuales) AS visitas_individuales
+FROM public.visitadadas v
+JOIN public.dim_oficina_turismo o
+    ON v.oficina_key = o.oficina_key
+GROUP BY
+    o.oficina_key,
+    o.nombre,
+    o.ambito;
+
+# LLAMADA A LA VISTA 5
+
+SELECT
+    oficina,
+    total_visitas
+FROM public.vw_visitas_oficinas
+ORDER BY
+    total_visitas DESC,
+    oficina;
+
+# CONSULTA 6
+
+SELECT
+    m.municipio_key,
+    m.nombre AS municipio,
+    m.provincia,
+    SUM(v.num_visitas) AS total_visitas,
+    SUM(v.num_consultas) AS total_consultas
+FROM public.visitadadas v
+JOIN public.dim_municipio m
+    ON v.municipio_key = m.municipio_key
+GROUP BY
+    m.municipio_key,
+    m.nombre,
+    m.provincia
+ORDER BY
+    total_visitas DESC,
+    provincia,
+    municipio;
+
+# VISTA 6
+
+CREATE OR REPLACE VIEW public.vw_visitas_oficinas_municipio AS
+SELECT
+    m.municipio_key,
+    m.nombre AS municipio,
+    m.provincia,
+    SUM(v.num_visitas) AS total_visitas,
+    SUM(v.num_consultas) AS total_consultas
+FROM public.visitadadas v
+JOIN public.dim_municipio m
+    ON v.municipio_key = m.municipio_key
+GROUP BY
+    m.municipio_key,
+    m.nombre,
+    m.provincia;
+
+# LLAMADA A LA VISTA 6
+
+SELECT
+    municipio,
+    provincia,
+    total_visitas
+FROM public.vw_visitas_oficinas_municipio
+ORDER BY
+    total_visitas DESC,
+    provincia,
+    municipio;
+
+# CONSULTA 7
+
+SELECT
+    f.anio,
+    f.mes,
+    f.nombre_mes,
+    SUM(v.num_visitas) AS total_visitas,
+    SUM(v.num_consultas) AS total_consultas
+FROM public.visitadadas v
+JOIN public.fechas f
+    ON v.fecha_key = f.fecha_key
+GROUP BY
+    f.anio,
+    f.mes,
+    f.nombre_mes
+ORDER BY
+    f.anio,
+    f.mes;
+
+# VISTA 7
+
+CREATE OR REPLACE VIEW public.vw_visitas_oficinas_mensuales AS
+SELECT
+    f.anio,
+    f.mes,
+    f.nombre_mes,
+    SUM(v.num_visitas) AS total_visitas,
+    SUM(v.num_consultas) AS total_consultas
+FROM public.visitadadas v
+JOIN public.fechas f
+    ON v.fecha_key = f.fecha_key
+GROUP BY
+    f.anio,
+    f.mes,
+    f.nombre_mes;
+
+# LLAMADA A LA VISTA 7
+
+SELECT *
+FROM public.vw_visitas_oficinas_mensuales
+ORDER BY
+    anio,
+    mes;
+
+# CONSULTA 8
+
+SELECT
+    m.monumento_key,
+    m.nombre AS monumento,
+    m.tipo,
+    SUM(v.num_visitas) AS total_visitas
+FROM public.visitas v
+JOIN public.dim_monumento m
+    ON v.monumento_key = m.monumento_key
+GROUP BY
+    m.monumento_key,
+    m.nombre,
+    m.tipo
+ORDER BY
+    total_visitas DESC,
+    monumento;
+
+# VISTA 8
+
+CREATE OR REPLACE VIEW public.vw_monumentos_mas_visitados AS
+SELECT
+    m.monumento_key,
+    m.nombre AS monumento,
+    m.tipo,
+    SUM(v.num_visitas) AS total_visitas
+FROM public.visitas v
+JOIN public.dim_monumento m
+    ON v.monumento_key = m.monumento_key
+GROUP BY
+    m.monumento_key,
+    m.nombre,
+    m.tipo;
+
+# LLAMADA A LA VISTA 8
+
+SELECT *
+FROM public.vw_monumentos_mas_visitados
+ORDER BY
+    total_visitas DESC,
+    monumento;
+
+# CONSULTA 9
+
+SELECT
+    m.monumento_key,
+    m.nombre AS monumento,
+    SUM(v.num_entradas) AS entradas_vendidas,
+    SUM(v.num_visitas_gratuitas) AS visitas_gratuitas,
+    SUM(v.importe_entradas) AS ingresos_entradas
+FROM public.visitas v
+JOIN public.dim_monumento m
+    ON v.monumento_key = m.monumento_key
+GROUP BY
+    m.monumento_key,
+    m.nombre
+ORDER BY
+    ingresos_entradas DESC,
+    monumento;
+
+# VISTA 9
+
+CREATE OR REPLACE VIEW public.vw_ingresos_monumentos AS
+SELECT
+    m.monumento_key,
+    m.nombre AS monumento,
+    SUM(v.num_entradas) AS entradas_vendidas,
+    SUM(v.num_visitas_gratuitas) AS visitas_gratuitas,
+    SUM(v.importe_entradas) AS ingresos_entradas
+FROM public.visitas v
+JOIN public.dim_monumento m
+    ON v.monumento_key = m.monumento_key
+GROUP BY
+    m.monumento_key,
+    m.nombre;
+
+# LLAMADA A LA VISTA 9
+
+SELECT *
+FROM public.vw_ingresos_monumentos
+ORDER BY
+    ingresos_entradas DESC,
+    monumento;
+
+# CONSULTA 10
+
+SELECT
+    m.monumento_key,
+    m.nombre AS monumento,
+    f.anio,
+    f.mes,
+    f.nombre_mes,
+    SUM(v.num_visitas) AS visitas,
+    SUM(v.importe_entradas) AS ingresos_entradas
+FROM public.visitas v
+JOIN public.dim_monumento m
+    ON v.monumento_key = m.monumento_key
+JOIN public.fechas f
+    ON v.fecha_key = f.fecha_key
+GROUP BY
+    m.monumento_key,
+    m.nombre,
+    f.anio,
+    f.mes,
+    f.nombre_mes
+ORDER BY
+    f.anio,
+    f.mes,
+    visitas DESC,
+    monumento;
+
+# VISTA 10
+
+CREATE OR REPLACE VIEW public.vw_visitas_monumentos_mensuales AS
+SELECT
+    m.monumento_key,
+    m.nombre AS monumento,
+    f.anio,
+    f.mes,
+    f.nombre_mes,
+    SUM(v.num_visitas) AS visitas,
+    SUM(v.importe_entradas) AS ingresos_entradas
+FROM public.visitas v
+JOIN public.dim_monumento m
+    ON v.monumento_key = m.monumento_key
+JOIN public.fechas f
+    ON v.fecha_key = f.fecha_key
+GROUP BY
+    m.monumento_key,
+    m.nombre,
+    f.anio,
+    f.mes,
+    f.nombre_mes;
+
+# LLAMADA A LA VISTA 10
+
+SELECT *
+FROM public.vw_visitas_monumentos_mensuales
+ORDER BY
+    anio,
+    mes,
+    visitas DESC,
+    monumento;
+
+# 5
+
+CREATE OR REPLACE VIEW public.vw_actividad_turistica_municipio AS
+
+WITH reservas_mes AS (
+    SELECT
+        r.municipio_key,
+        f.anio,
+        f.mes,
+        COUNT(*) AS total_reservas,
+        SUM(r.turistas) AS turistas_en_reservas,
+        SUM(r.importe) AS importe_reservas
+    FROM public.reservas r
+    JOIN public.fechas f
+        ON r.fecha_entrada_key = f.fecha_key
+    GROUP BY
+        r.municipio_key,
+        f.anio,
+        f.mes
+),
+
+oficinas_mes AS (
+    SELECT
+        v.municipio_key,
+        f.anio,
+        f.mes,
+        SUM(v.num_visitas) AS visitas_oficinas
+    FROM public.visitadadas v
+    JOIN public.fechas f
+        ON v.fecha_key = f.fecha_key
+    GROUP BY
+        v.municipio_key,
+        f.anio,
+        f.mes
+),
+
+monumentos_mes AS (
+    SELECT
+        v.municipio_key,
+        f.anio,
+        f.mes,
+        SUM(v.num_visitas) AS visitas_monumentos,
+        SUM(v.importe_entradas) AS ingresos_entradas
+    FROM public.visitas v
+    JOIN public.fechas f
+        ON v.fecha_key = f.fecha_key
+    GROUP BY
+        v.municipio_key,
+        f.anio,
+        f.mes
+),
+
+periodos AS (
+    SELECT municipio_key, anio, mes
+    FROM reservas_mes
+
+    UNION
+
+    SELECT municipio_key, anio, mes
+    FROM oficinas_mes
+
+    UNION
+
+    SELECT municipio_key, anio, mes
+    FROM monumentos_mes
+)
+
+SELECT
+    m.municipio_key,
+    m.nombre AS municipio,
+    m.provincia,
+    p.anio,
+    p.mes,
+    COALESCE(r.total_reservas, 0) AS total_reservas,
+    COALESCE(r.turistas_en_reservas, 0) AS turistas_en_reservas,
+    COALESCE(r.importe_reservas, 0) AS importe_reservas,
+    COALESCE(o.visitas_oficinas, 0) AS visitas_oficinas,
+    COALESCE(mo.visitas_monumentos, 0) AS visitas_monumentos,
+    COALESCE(mo.ingresos_entradas, 0) AS ingresos_entradas
+FROM periodos p
+JOIN public.dim_municipio m
+    ON p.municipio_key = m.municipio_key
+
+LEFT JOIN reservas_mes r
+    ON p.municipio_key = r.municipio_key
+   AND p.anio = r.anio
+   AND p.mes = r.mes
+
+LEFT JOIN oficinas_mes o
+    ON p.municipio_key = o.municipio_key
+   AND p.anio = o.anio
+   AND p.mes = o.mes
+
+LEFT JOIN monumentos_mes mo
+    ON p.municipio_key = mo.municipio_key
+   AND p.anio = mo.anio
+   AND p.mes = mo.mes;
+
+# LLAMADA A 5
+
+SELECT *
+FROM public.vw_actividad_turistica_municipio
+ORDER BY
+    anio,
+    mes,
+    turistas_en_reservas DESC,
+    municipio;
